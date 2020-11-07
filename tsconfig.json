@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "allowSyntheticDefaultImports": false,
+    "baseUrl": "./",
+    "outDir": "./dist",
+    "module": "CommonJS",
+    "target": "ESNext",
+    "resolveJsonModule": true,
+    "moduleResolution": "Node",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/@types"
+    ],
+    "paths": {
+      "@Src/*": ["./src/*"],
+    }
+  },
+  "include": [
+    "./src/**/*"
+  ]
+}

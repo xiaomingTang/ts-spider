@@ -1,0 +1,30 @@
+{
+  "name": "ts-spider",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "author": "1038761793@qq.com",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "ts": "cross-env ts-node -r tsconfig-paths/register src/index.ts",
+    "ts:watch": "cross-env nodemon --watch src/**/*.ts --exec 'ts-node' -r tsconfig-paths/register src/index.ts"
+  },
+  "devDependencies": {
+    "@types/async": "^3.2.3",
+    "@types/cheerio": "^0.22.22",
+    "@types/node": "^14.11.8",
+    "cross-env": "^7.0.2",
+    "nodemon": "^2.0.6",
+    "ts-node": "^9.0.0",
+    "tsconfig-paths": "^3.9.0",
+    "typescript": "^4.0.3"
+  },
+  "dependencies": {
+    "@types/puppeteer": "^5.4.0",
+    "async": "^3.2.0",
+    "axios": "^0.20.0",
+    "cheerio": "^1.0.0-rc.3",
+    "puppeteer": "^5.4.1",
+    "tang-base-node-utils": "^1.2.4"
+  }
+}
