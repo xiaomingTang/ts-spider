@@ -5,10 +5,8 @@ import * as process from "process"
 import { Base, File, Json } from "tang-base-node-utils"
 import * as cheerio from "cheerio"
 
-import { mimeMap } from "@Src/data/mime"
-
 import { defaultHeaders } from "./config"
-import { sleep } from "./base"
+import { getSuffix, sleep } from "./base"
 
 export type CheerioRoot = ReturnType<typeof cheerio.load>
 export type $Cheerio = ReturnType<CheerioRoot>
@@ -76,20 +74,23 @@ export async function fetchLink<T = string>(config: FetchConfig): Promise<AxiosR
   }
 }
 
-function onDownloadProgress(downloadedLen: number, totalLen: number) {
+function onDownloadProgress(downloadedLen: number, totalLen: number): void {
   const percent = Math.round(downloadedLen / totalLen * 1000) / 10
   const percentStr = `${percent.toFixed(1)} %`.padEnd(7, " ")
   process.stdout.write(`\rdownloading: ${percentStr}`)
 }
 
-export async function downloadFile(config: FetchConfig, dest: string, onProgress = onDownloadProgress): Promise<void> {
+export async function downloadFile(config: FetchConfig, dest: string, onProgress = onDownloadProgress): Promise<string> {
   return new Promise((resolve, reject) => {
     fetchLink<Stream>({
       ...config,
       // responseType 强制设为 stream, 不采用 config 输入值
       responseType: "stream",
     }).then(({ data, headers }) => {
-      const suffix = mimeMap[headers["content-type"]] || ""
+      const suffix = getSuffix({
+        url: config.url,
+        contentType: headers["content-type"],
+      })
       let destPath = dest
       if (suffix && !dest.endsWith(suffix)) {
         destPath += suffix
@@ -100,7 +101,7 @@ export async function downloadFile(config: FetchConfig, dest: string, onProgress
       let downloadedLen = 0
       data.on("close", () => {
         process.stdout.write("\n")
-        resolve()
+        resolve(destPath)
       })
       data.on("error", (err) => {
         process.stdout.write("\n")
@@ -117,7 +118,7 @@ export async function downloadFile(config: FetchConfig, dest: string, onProgress
   })
 }
 
-export async function downloadJson<T>(config: FetchConfig, dest?: string) {
+export async function downloadJson<T>(config: FetchConfig, dest?: string): Promise<T> {
   const { data } = await fetchLink<T>({
     ...config,
     // responseType 强制设为 json, 不采用 config 输入值
@@ -153,7 +154,7 @@ export function querySelector<T>($: CheerioRoot, { selector, map, filter }: Sele
   return $elems.map(($elem, idx) => map($elem, idx, filteredTotal))
 }
 
-export async function getContentFromHtml<T>(config: FetchConfig, selectorConfig: SelectorConfig<T>) {
+export async function getContentFromHtml<T>(config: FetchConfig, selectorConfig: SelectorConfig<T>): Promise<T[]> {
   const $ = await downloadHtml(config)
   return querySelector($, selectorConfig)
 }
