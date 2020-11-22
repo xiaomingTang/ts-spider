@@ -2,3 +2,5 @@
 **/.git/
 **/.DS_Store/
 **/yarn-error.log
+/download
+/debug.log
