@@ -1,74 +1,28 @@
-import { Base, Json } from "tang-base-node-utils"
-import { Page } from "puppeteer"
+import { join as pathJoin } from "path"
 
 import { getSuffix, randomDelay } from "@Src/utils/base"
-import { downloadFile, downloadJson, launchBrowser, setBrowser } from "@Src/utils/puppeteer"
+import {
+  downloadFile, downloadJson, launchBrowser, setBrowser,
+} from "@Src/utils/puppeteer"
+import {
+  InsQueryConfig, InsResponse, VariablesA, InsInstallConfig,
+} from "./interface"
 
-interface VariablesA {
-  id: string;
-  first: number;
-  after: string;
-}
+/**
+ * 用户独立的变量
+ * 例如
+ * {
+ *   "someont": {
+ *     "someConfigName": "someValue",
+ *   },
+ * }
+ */
+const TEMP_VARS: Record<string, Record<string, any>> = {}
 
-interface VariablesB {
-  has_threaded_comments?: boolean;
-}
-
-interface InsQueryConfig {
-  recursive?: boolean;
-  page: Page,
-  query_hash: string;
-  variables: VariablesA | VariablesB;
-}
-
-interface ImgInfo {
-  config_height: number;
-  config_width: number;
-  src: string;
-}
-
-interface InsResponse {
-  data: {
-    user: {
-      edge_web_feed_timeline?: {
-        count?: number;
-        edges: {
-          node: {
-            // display_resources 图片数组, 越靠后的尺寸越大
-            display_resources?: ImgInfo[];
-          }
-        }[];
-        page_info: {
-          has_next_page: boolean;
-          end_cursor: string;
-        }
-      };
-      edge_owner_to_timeline_media?: {
-        count: number;
-        edges: {
-          node: {
-            // display_resources 图片数组, 越靠后的尺寸越大
-            display_resources?: ImgInfo[];
-          }
-        }[];
-        page_info: {
-          has_next_page: boolean;
-          end_cursor: string;
-        }
-      };
-    };
-  };
-}
-
-let globalIdx = 1
-let total = 0
-const insUserName = "petitbateau_jp"
-const downloadPrefix = `download/instagram/${insUserName}`
-const cookie = `ig_did=5A83DDFA-4F59-4DAD-91E1-7E50B6283961; mid=XeNmNgALAAG2HP1S0W_PEyNBPDSg; csrftoken=tq85AnUTemS1GjpRm5KA87NVkNNJHJn5; sessionid=9302101905%3AECP3CJckUdX3jy%3A9; ds_user_id=9302101905; rur=PRN; urlgen="{\"47.241.66.48\": 45102}:1kgSx5:Nx6JAS8jcpDEBt7kI4h9YFSR2zk"`
-
-export default async function main() {
+export default async function main({ cookie, destRoot, users }: InsInstallConfig) {
   const { page, browser } = await launchBrowser({
     args: ['--start-maximized'],
+    headless: true,
   })
   await setBrowser({
     page,
@@ -76,39 +30,51 @@ export default async function main() {
     cookie,
   })
 
-  await queryIns({
-    recursive: false,
-    page,
-    query_hash: "c699b185975935ae2a457f24075de8c7",
-    variables: {
-      has_threaded_comments: true,
-    },
-  })
-
-  await queryIns({
-    recursive: true,
-    page,
-    query_hash: "003056d32c2554def87228bc3fd9668a",
-    variables: {
-      id: "8161611069",
-      first: 12,
-      after: "QVFDc2ZUS001emh4Wm5LSXF0N0MtOU9Tekh2Z2xIUVJFbFJ0THg0aFVQVnZuRldDS3VxVzliVE9HdWVVWEFRcXZTV2dDbjlkcnFjUEZYUnpSV1NGNWptNA==",
-    },
-  })
+  for (let i = 0; i < users.length; i += 1) {
+    const {
+      insUsername, insId, queryHashHome, queryHashXhr, queryXhrAfter,
+    } = users[i]
+    await queryIns({
+      insUsername,
+      insId,
+      destRoot,
+      recursive: false,
+      page,
+      query_hash: queryHashHome,
+      variables: {
+        has_threaded_comments: true,
+      },
+    })
+  
+    await queryIns({
+      insUsername,
+      insId,
+      destRoot,
+      recursive: true,
+      page,
+      query_hash: queryHashXhr,
+      variables: {
+        id: insId,
+        first: 12,
+        after: queryXhrAfter,
+      },
+    })
+  }
 
   browser.close()
 }
 
 async function queryIns({
+  insUsername,
+  insId,
+  destRoot,
   recursive = true,
   page,
   query_hash,
   variables,
 }: InsQueryConfig) {
-  if (globalIdx > 3) {
-    throw new Error("不下了")
-  }
   await randomDelay()
+  // 这个地址是 ins 用户图片统一查询地址
   const url = new URL("https://www.instagram.com/graphql/query/")
   url.searchParams.append("query_hash", query_hash)
   url.searchParams.append("variables", JSON.stringify(variables))
@@ -126,7 +92,7 @@ async function queryIns({
       end_cursor: "",
     },
   }
-  total = media.count || 0
+  const total = media.count || -1
   for (let edge of media.edges) {
     const resList = edge.node.display_resources || []
     const res = resList.reduce((prev, cur) => {
@@ -136,16 +102,19 @@ async function queryIns({
     if (res) {
       await randomDelay()
       const { src } = res
-      const dest = `${downloadPrefix}/${globalIdx}${getSuffix({
+      const suffix = getSuffix({
         url: src,
         contentType: "",
-      })}`
-      console.log(`【正在下载 ${globalIdx.toString().padStart(4, " ")}/${total}】: ${src}`)
+      })
+      TEMP_VARS[insUsername] = TEMP_VARS[insUsername] || {}
+      const curIdx = TEMP_VARS[insUsername].curIdx = TEMP_VARS[insUsername].curIdx || 0
+      const dest = pathJoin(destRoot, insUsername, `${curIdx}${suffix}`)
+      TEMP_VARS[insUsername].curIdx += 1
+      console.log(`【正在下载 ${curIdx.toString().padStart(4, " ")}/${total}】: ${src}`)
       await downloadFile({
         page,
         url: src,
       }, dest)
-      globalIdx += 1
     }
   }
 
@@ -154,6 +123,9 @@ async function queryIns({
     const { id, first } = variables as VariablesA
     if (recursive && id) {
       await queryIns({
+        insUsername,
+        insId,
+        destRoot,
         recursive,
         page,
         query_hash,

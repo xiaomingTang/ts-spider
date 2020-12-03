@@ -3,10 +3,11 @@ import {  DirectNavigationOptions, launch, LaunchOptions, Page } from "puppeteer
 import { Base, Json } from "tang-base-node-utils"
 
 import { getSuffix } from "./base"
+import { LOCAL_BROWSER_PATH } from "./config"
 
 export async function launchBrowser(options: LaunchOptions = {}) {
   const browser = await launch({
-    executablePath: "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+    executablePath: LOCAL_BROWSER_PATH,
     headless: false,
     ...options,
   })

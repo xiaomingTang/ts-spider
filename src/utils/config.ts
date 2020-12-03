@@ -3,3 +3,5 @@ const ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 export const defaultHeaders: Record<string, string> = {
   ua,
 }
+
+export const LOCAL_BROWSER_PATH = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"
