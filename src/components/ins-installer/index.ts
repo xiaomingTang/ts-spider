@@ -73,7 +73,6 @@ async function queryIns({
   query_hash,
   variables,
 }: InsQueryConfig) {
-  await randomDelay()
   // 这个地址是 ins 用户图片统一查询地址
   const url = new URL("https://www.instagram.com/graphql/query/")
   url.searchParams.append("query_hash", query_hash)
@@ -100,7 +99,6 @@ async function queryIns({
       return cur
     }, resList[0])
     if (res) {
-      await randomDelay()
       const { src } = res
       const suffix = getSuffix({
         url: src,
@@ -110,11 +108,12 @@ async function queryIns({
       const curIdx = TEMP_VARS[insUsername].curIdx = TEMP_VARS[insUsername].curIdx || 0
       const dest = pathJoin(destRoot, insUsername, `${curIdx}${suffix}`)
       TEMP_VARS[insUsername].curIdx += 1
-      console.log(`【正在下载 ${curIdx.toString().padStart(4, " ")}/${total}】: ${src}`)
+      console.log(`【正在下载 ${insUsername} ${curIdx.toString().padStart(4, " ")}/${total}】: ${src}`)
       await downloadFile({
         page,
         url: src,
       }, dest)
+      await randomDelay()
     }
   }
 
