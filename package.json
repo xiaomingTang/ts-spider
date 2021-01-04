@@ -25,6 +25,6 @@
     "axios": "^0.20.0",
     "cheerio": "^1.0.0-rc.3",
     "puppeteer": "^5.4.1",
-    "tang-base-node-utils": "^1.2.4"
+    "tang-base-node-utils": "^1.3.0"
   }
 }

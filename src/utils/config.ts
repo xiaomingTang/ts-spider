@@ -4,4 +4,4 @@ export const defaultHeaders: Record<string, string> = {
   ua,
 }
 
-export const LOCAL_BROWSER_PATH = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"
+export const LOCAL_BROWSER_PATH = "C:/Program Files/Google/Chrome/Application/chrome.exe"
