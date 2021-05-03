@@ -1,11 +1,14 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
-import { Stream } from "stream"
+import * as cheerio from "cheerio"
+import * as iconv from "iconv-lite"
 import * as fs from "fs"
 import * as process from "process"
-import { Base, Json } from "tang-base-node-utils"
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
+import { Stream } from "stream"
+import { Base, File, Json } from "tang-base-node-utils"
 
 import { defaultHeaders } from "./config"
 import { getSuffix, sleep } from "./base"
+import { CheerioRoot, querySelector, SelectorConfig } from "./cheerio"
 
 export interface AxiosFetchConfig extends AxiosRequestConfig {
   url: string;
@@ -50,6 +53,15 @@ export async function fetchLink<T = string>(config: AxiosFetchConfig): Promise<A
     }
     throw err
   }
+}
+
+export async function getHeaders(config: AxiosFetchConfig): Promise<Record<string, string> | undefined> {
+  const content = await fetchLink({
+    ...config,
+    // method 给出默认值 HEAD, 如果存在 config 输入值, 则采用 config 输入值
+    method: config.method || "HEAD",
+  })
+  return content.headers
 }
 
 function onDownloadProgress(downloadedLen: number, totalLen: number): void {
@@ -112,11 +124,21 @@ export async function downloadJson<T>(config: AxiosFetchConfig, dest?: string): 
   return data
 }
 
-export async function getHeaders(config: AxiosFetchConfig): Promise<Record<string, string> | undefined> {
-  const content = await fetchLink({
+export async function downloadHtml(config: AxiosFetchConfig, dest = "", srcEncoding = "utf8"): Promise<CheerioRoot> {
+  const { data } = await fetchLink({
     ...config,
-    // method 给出默认值 HEAD, 如果存在 config 输入值, 则采用 config 输入值
-    method: config.method || "HEAD",
+    // responseType 强制设为 document, 不采用 config 输入值
+    responseType: 'arraybuffer',
+    transformResponse: (data: ArrayBuffer) => iconv.decode(Buffer.from(data), srcEncoding),
   })
-  return content.headers
+  if (dest) {
+    new Base(dest).createAsFile()
+    new File(dest).write(data)
+  }
+  return cheerio.load(data)
+}
+
+export async function getContent<T>(config: AxiosFetchConfig, selectorConfig: SelectorConfig<T>, srcEncoding = "utf8"): Promise<T[]> {
+  const $ = await downloadHtml(config, "", srcEncoding)
+  return querySelector($, selectorConfig)
 }
