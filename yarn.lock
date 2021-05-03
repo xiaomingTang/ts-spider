@@ -1189,10 +1189,10 @@ supports-color@^7.1.0:
   dependencies:
     has-flag "^4.0.0"
 
-tang-base-node-utils@^1.2.4:
-  version "1.2.4"
-  resolved "https://registry.npm.taobao.org/tang-base-node-utils/download/tang-base-node-utils-1.2.4.tgz#1379d062e525af061409d01bd162497b10c667fe"
-  integrity sha1-E3nQYuUlrwYUCdAb0WJJexDGZ/4=
+tang-base-node-utils@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.npm.taobao.org/tang-base-node-utils/download/tang-base-node-utils-1.3.0.tgz#009fe02800fe1c5b32f757e9af748cb08a213e11"
+  integrity sha1-AJ/gKAD+HFsy91fpr3SMsIohPhE=
 
 tar-fs@^2.0.0:
   version "2.1.1"

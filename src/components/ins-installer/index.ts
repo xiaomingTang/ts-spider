@@ -1,4 +1,5 @@
 import { join as pathJoin } from "path"
+import { Base } from "tang-base-node-utils"
 
 import { getSuffix, randomDelay } from "@Src/utils/base"
 import {
@@ -93,6 +94,7 @@ async function queryIns({
   }
   const total = media.count || -1
   for (let edge of media.edges) {
+    await randomDelay()
     const resList = edge.node.display_resources || []
     const res = resList.reduce((prev, cur) => {
       if (prev && prev.config_width > cur.config_width) { return prev }
@@ -107,13 +109,21 @@ async function queryIns({
       TEMP_VARS[insUsername] = TEMP_VARS[insUsername] || {}
       const curIdx = TEMP_VARS[insUsername].curIdx = TEMP_VARS[insUsername].curIdx || 0
       const dest = pathJoin(destRoot, insUsername, `${curIdx}${suffix}`)
+      const errorFilePath = pathJoin(destRoot, "__error__.txt")
       TEMP_VARS[insUsername].curIdx += 1
       console.log(`【正在下载 ${insUsername} ${curIdx.toString().padStart(4, " ")}/${total}】: ${src}`)
-      await downloadFile({
-        page,
-        url: src,
-      }, dest)
-      await randomDelay()
+      try {
+        await downloadFile({
+          page,
+          url: src,
+          timeout: 60000,
+        }, dest)
+      } catch (error) {
+        const errorPrompt = `【下载错误】【用户名: ${insUsername}】【 ${src} 】`
+        console.error(errorPrompt)
+        const errorFile = new Base(errorFilePath).createAsFile()
+        errorFile.aWrite(errorPrompt)
+      }
     }
   }
 

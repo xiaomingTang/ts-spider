@@ -15,7 +15,7 @@ export function voidFunc() {
 }
 
 export async function randomDelay() {
-  const t = Math.floor(Math.random() * 200 + 200)
+  const t = Math.floor(Math.random() * 400 + 400)
   await sleep(t)
   return t
 }
