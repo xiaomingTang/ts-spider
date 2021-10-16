@@ -1,10 +1,11 @@
 import { join as pathJoin } from "path"
 import { Base } from "tang-base-node-utils"
 
-import { getSuffix, randomDelay } from "@Src/utils/base"
+import { getSuffix, randomSleep } from "@Src/utils/base"
 import {
   downloadFile, downloadJson, launchBrowser, setBrowser,
 } from "@Src/utils/puppeteer"
+import { log } from "@Src/utils/log"
 import {
   InsQueryConfig, InsResponse, VariablesA, InsInstallConfig,
 } from "./interface"
@@ -78,7 +79,7 @@ async function queryIns({
   const url = new URL("https://www.instagram.com/graphql/query/")
   url.searchParams.append("query_hash", query_hash)
   url.searchParams.append("variables", JSON.stringify(variables))
-  console.log(`正在查询 ${url.toString()}`)
+  log.info(`正在查询 ${url.toString()}`)
 
   const resJson = await downloadJson<InsResponse>({
     page,
@@ -94,7 +95,7 @@ async function queryIns({
   }
   const total = media.count || -1
   for (let edge of media.edges) {
-    await randomDelay()
+    await randomSleep()
     const resList = edge.node.display_resources || []
     const res = resList.reduce((prev, cur) => {
       if (prev && prev.config_width > cur.config_width) { return prev }
@@ -111,7 +112,7 @@ async function queryIns({
       const dest = pathJoin(destRoot, insUsername, `${curIdx}${suffix}`)
       const errorFilePath = pathJoin(destRoot, "__error__.txt")
       TEMP_VARS[insUsername].curIdx += 1
-      console.log(`【正在下载 ${insUsername} ${curIdx.toString().padStart(4, " ")}/${total}】: ${src}`)
+      log.info(`【正在下载 ${insUsername} ${curIdx.toString().padStart(4, " ")}/${total}】: ${src}`)
       try {
         await downloadFile({
           page,
@@ -120,7 +121,7 @@ async function queryIns({
         }, dest)
       } catch (error) {
         const errorPrompt = `【下载错误】【用户名: ${insUsername}】【 ${src} 】`
-        console.error(errorPrompt)
+        log.error(errorPrompt)
         const errorFile = new Base(errorFilePath).createAsFile()
         errorFile.aWrite(errorPrompt)
       }

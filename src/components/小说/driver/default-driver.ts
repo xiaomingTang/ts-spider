@@ -1,6 +1,8 @@
-import { formatIndexAndTotal, log, sleep } from "@Src/utils/base"
 import * as async from "async"
 import { Base } from "tang-base-node-utils"
+
+import { formatIndexAndTotal, randomSleep } from "@Src/utils/base"
+import { log } from "@Src/utils/log"
 
 interface ChapterInfo {
   title: string;
@@ -42,43 +44,63 @@ export class DefaultDriver implements ArticleInstaller {
   }
 
   async install(target: string, option?: InstallOption) {
-    const targetFile = new Base(target).createAsFile()
-
     const {
       startChapter, concurrency, endChapter,
     } = {
       ...defaultInstallOption,
       ...option,
     }
-
-    if (startChapter < 1) {
-      targetFile.write("")
-    }
+    const tarBase = new Base(target)
+    const logProgress = log.createProgress()
 
     const chapters = (await this.getChapters(this.menuPage)).map((item, index) => ({
       ...item,
       index,
-    })).slice(startChapter, endChapter)
+    }))
+    const total = chapters.length
 
     const articles = chapters.map(() => "")
-    const total = articles.length
 
     await async.mapLimit(chapters, concurrency, async ({ url, title, index }) => {
-      log.success(`${formatIndexAndTotal({ index, total })}: 正在下载 ${title} ${url}`)
+      const pageStr = formatIndexAndTotal({ index: index + 1, total })
 
-      await sleep(Math.random() * 100 + 100)
+      logProgress((index + 1) / total, {
+        level: "info",
+        prefix: `${tarBase.name} ${pageStr}`,
+      })
+
+      if (index < startChapter || index > endChapter) {
+        return
+      }
+
+      await randomSleep()
 
       let content = ""
 
       try {
         content = await this.getContent(url)
       } catch (error) {
-        content = `章节下载错误: 第 ${index + 1} 章 ${title}`
+        content = `章节下载错误: 第 ${pageStr} 章 ${title} ${url}`
+        // 保留进度条, 防止被其后的 log 覆盖
+        log.log("")
+        log.error(content)
       }
 
       articles[index] = `${title}\n${content}`
     })
 
-    targetFile.aWrite(articles.filter(Boolean).join("\n\n"))
+    // 保留进度条, 防止被其后的 log 覆盖
+    log.log("")
+
+    const finalContent = articles.filter(Boolean).join("\n\n")
+    if (!finalContent) {
+      return log.error(`【${target}】 下载失败，内容为空`)
+    }
+    const targetFile = tarBase.createAsFile()
+    if (startChapter < 1) {
+      targetFile.write("")
+    }
+
+    targetFile.aWrite(finalContent)
   }
 }

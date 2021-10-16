@@ -43,7 +43,6 @@ export async function fetchLink<T = string>(config: AxiosFetchConfig): Promise<A
     return result
   } catch (err) {
     if (retryCount > 0 && retryDelayMs > 0) {
-      console.log(`重试(剩余次数: ${retryCount - 1}): ${url}`)
       await sleep(retryDelayMs)
       const result = await fetchLink<T>({
         ...config,
