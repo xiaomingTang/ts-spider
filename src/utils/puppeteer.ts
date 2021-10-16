@@ -67,7 +67,7 @@ export async function setBrowser({
     const name = trimedPair.slice(0, trimedPair.indexOf('='))
     const value = trimedPair.slice(trimedPair.indexOf('=') + 1)
     return { name, value, domain }
-  })
+  }).filter((item) => (item.name && item.value))
   if (cookies.length > 0) {
     await page.deleteCookie()
     await Promise.all(cookies.map((pair) => {
