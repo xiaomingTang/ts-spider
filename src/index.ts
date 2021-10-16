@@ -17,4 +17,6 @@
 
 // insInstaller(config)
 
-import "./components/小说/index"
+import { Driver } from "./components/article-installer/driver/liquge"
+
+new Driver("http://www.site.com/book/path").install("save/target")
