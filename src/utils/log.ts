@@ -13,15 +13,57 @@ export interface LogConfig {
   oneLine?: boolean;
 }
 
-const LogFormatterMap: {
-  [key in LogLevel]: (...contents: string[]) => string;
+const LOG_CONFIG_MAP: {
+  [key in LogLevel]: {
+    formatter: (...contents: string[]) => string;
+    default: {
+      prefix: string;
+      suffix: string;
+    };
+  };
 } = {
-  none: (...contents: string[]) => contents.filter(Boolean).join(" "),
-  info: chalk.cyan,
-  success: chalk.green,
-  warn: chalk.yellow,
-  error: chalk.red,
-  whispered: chalk.gray,
+  none: {
+    formatter: (...contents: string[]) => contents.filter(Boolean).join(" "),
+    default: {
+      prefix: "",
+      suffix: "",
+    },
+  },
+  info: {
+    formatter: chalk.cyan,
+    default: {
+      prefix: "[info]",
+      suffix: "",
+    },
+  },
+  success: {
+    formatter: chalk.green,
+    default: {
+      prefix: "[success]",
+      suffix: "",
+    },
+  },
+  warn: {
+    formatter: chalk.yellow,
+    default: {
+      prefix: "[warn]",
+      suffix: "",
+    },
+  },
+  error: {
+    formatter: chalk.red,
+    default: {
+      prefix: "[error]",
+      suffix: "",
+    },
+  },
+  whispered: {
+    formatter: chalk.gray,
+    default: {
+      prefix: "[whispered]",
+      suffix: "",
+    },
+  },
 }
 
 function formatDate(date: Date) {
@@ -41,8 +83,8 @@ function createDecodeLogParams(defaultLevel: LogLevel = "info") {
     if (typeof config === "string") {
       return [{
         level: defaultLevel,
-        prefix: defaultLevel === "none" ? "" : `[${defaultLevel}]`,
-        suffix: "",
+        prefix: LOG_CONFIG_MAP[defaultLevel].default.prefix,
+        suffix: LOG_CONFIG_MAP[defaultLevel].default.suffix,
         oneLine: false,
       }, finalContents]
     }
@@ -50,21 +92,21 @@ function createDecodeLogParams(defaultLevel: LogLevel = "info") {
     const level = config.level ?? defaultLevel
     return [{
       level,
-      prefix: config.prefix ?? (level === "none" ? "" : `[${level}]`),
-      suffix: config.suffix ?? "",
+      prefix: config.prefix ?? LOG_CONFIG_MAP[level].default.prefix,
+      suffix: config.suffix ?? LOG_CONFIG_MAP[level].default.suffix,
       oneLine: config.oneLine ?? false,
     }, finalContents]
   }
   
 }
 
-class Log {
+export class Log {
   raw(...contents: string[]): void
   raw(config: LogConfig, ...contents: string[]): void
   raw(config: string | LogConfig, ...contents: string[]) {
     const [finalConfig, finalContents] = createDecodeLogParams()(config, ...contents)
 
-    const text = LogFormatterMap[finalConfig.level](...[
+    const outputText = LOG_CONFIG_MAP[finalConfig.level].formatter(...[
       finalConfig.prefix,
       ...finalContents,
       finalConfig.suffix,
@@ -73,9 +115,9 @@ class Log {
     if (finalConfig.oneLine) {
       readline.clearLine(process.stdout, 0)
       readline.cursorTo(process.stdout, 0)
-      process.stdout.write(text, "utf-8")
+      process.stdout.write(outputText, "utf-8")
     } else {
-      console.log(text)
+      console.log(outputText)
     }
   }
 
@@ -112,7 +154,13 @@ class Log {
   createProgress(_config?: Omit<LogConfig, "oneLine">) {
     const LENGTH = 50
     let lastPercent = 0
+    /**
+     * percent: 0~1
+     */
     return (percent: number, config = _config) => {
+      if (percent > 1) {
+        return
+      }
       const finalConfig: Required<LogConfig> = {
         level: "none",
         prefix: "",
