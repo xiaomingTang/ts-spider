@@ -51,7 +51,7 @@ export class DefaultDriver implements ArticleInstaller {
       ...option,
     }
     const tarBase = new Base(targetFilePath)
-    const logProgress = log.createProgress()
+    const progress = log.createProgress()
 
     const chapters = (await this.getChapters(this.menuPage)).map((item, index) => ({
       ...item,
@@ -64,7 +64,8 @@ export class DefaultDriver implements ArticleInstaller {
     await async.mapLimit(chapters, concurrency, async ({ url, title, index }) => {
       const pageStr = formatIndexAndTotal({ index: index + 1, total })
 
-      logProgress((index + 1) / total, {
+      progress.log({
+        percentage: (index + 1) / total,
         level: "info",
         prefix: `${tarBase.name} ${pageStr}`,
       })

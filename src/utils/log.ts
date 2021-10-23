@@ -13,6 +13,17 @@ export interface LogConfig {
   oneLine?: boolean;
 }
 
+type SimpleLogConfig = Omit<LogConfig, "level">
+
+type CreateProgressConfig = Omit<LogConfig, "oneLine">
+
+type ProgressConfig = Omit<LogConfig, "oneLine"> & {
+  /**
+   * 0 ~ 1
+   */
+  percentage: number;
+}
+
 const LOG_CONFIG_MAP: {
   [key in LogLevel]: {
     formatter: (...contents: string[]) => string;
@@ -97,7 +108,6 @@ function createDecodeLogParams(defaultLevel: LogLevel = "info") {
       oneLine: config.oneLine ?? false,
     }, finalContents]
   }
-  
 }
 
 export class Log {
@@ -121,44 +131,48 @@ export class Log {
     }
   }
 
-  info(config: string | Omit<LogConfig, "level">, ...contents: string[]) {
+  info(config: string | SimpleLogConfig, ...contents: string[]) {
     const [finalConfig, finalContents] = createDecodeLogParams("info")(config, ...contents)
     return this.raw(finalConfig, ...finalContents)
   }
 
-  success(config: string | Omit<LogConfig, "level">, ...contents: string[]) {
+  success(config: string | SimpleLogConfig, ...contents: string[]) {
     const [finalConfig, finalContents] = createDecodeLogParams("success")(config, ...contents)
     return this.raw(finalConfig, ...finalContents)
   }
 
-  warn(config: string | Omit<LogConfig, "level">, ...contents: string[]) {
+  warn(config: string | SimpleLogConfig, ...contents: string[]) {
     const [finalConfig, finalContents] = createDecodeLogParams("warn")(config, ...contents)
     return this.raw(finalConfig, ...finalContents)
   }
 
-  error(config: string | Omit<LogConfig, "level">, ...contents: string[]) {
+  error(config: string | SimpleLogConfig, ...contents: string[]) {
     const [finalConfig, finalContents] = createDecodeLogParams("error")(config, ...contents)
     return this.raw(finalConfig, ...finalContents)
   }
 
-  whispered(config: string | Omit<LogConfig, "level">, ...contents: string[]) {
+  whispered(config: string | SimpleLogConfig, ...contents: string[]) {
     const [finalConfig, finalContents] = createDecodeLogParams("whispered")(config, ...contents)
     return this.raw(finalConfig, ...finalContents)
   }
 
-  log(config: string | Omit<LogConfig, "level">, ...contents: string[]) {
+  log(config: string | SimpleLogConfig, ...contents: string[]) {
     const [finalConfig, finalContents] = createDecodeLogParams("none")(config, ...contents)
     return this.raw(finalConfig, ...finalContents)
   }
 
-  createProgress(_config?: Omit<LogConfig, "oneLine">) {
+  createProgress(_config?: CreateProgressConfig) {
     const LENGTH = 50
-    let lastPercent = 0
-    /**
-     * percent: 0~1
-     */
-    return (percent: number, config = _config) => {
-      if (percent > 1) {
+    let lastPercentage = 0
+
+    const reset = () => {
+      lastPercentage = 0
+    }
+
+    const log = ({
+      percentage, ...config
+    }: ProgressConfig) => {
+      if (percentage > 1) {
         return
       }
       const finalConfig: Required<LogConfig> = {
@@ -169,10 +183,15 @@ export class Log {
         ...config,
         oneLine: true,
       }
-      lastPercent = Math.max(percent, lastPercent)
-      const done = Math.round(lastPercent * LENGTH)
+      lastPercentage = Math.max(percentage, lastPercentage)
+      const done = Math.round(lastPercentage * LENGTH)
       const running = LENGTH - done
       this.raw(finalConfig, `[${"".padStart(done, "█")}${"".padStart(running, "_")}]`)
+    }
+
+    return {
+      reset,
+      log,
     }
   }
 
