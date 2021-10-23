@@ -4,7 +4,7 @@ import { Base } from "tang-base-node-utils"
 import { formatIndexAndTotal, randomSleep } from "@Src/utils/base"
 import { log } from "@Src/utils/log"
 
-interface ChapterInfo {
+export interface ChapterInfo {
   title: string;
   url: string;
 }
@@ -25,9 +25,9 @@ const defaultInstallOption: Required<InstallOption> = {
 }
 
 abstract class ArticleInstaller {
-  abstract getChapters(path: string): Promise<ChapterInfo[]>
+  abstract getChapters(path: string, prevChapters?: ChapterInfo[]): Promise<ChapterInfo[]>
 
-  abstract getContent(path: string): Promise<string>;
+  abstract getContent(path: string, prevContent?: string): Promise<string>;
 }
 
 export class DefaultDriver implements ArticleInstaller {
@@ -35,22 +35,22 @@ export class DefaultDriver implements ArticleInstaller {
     public menuPage: string,
   ) {}
 
-  async getChapters(path: string): Promise<ChapterInfo[]> {
+  async getChapters(path: string, prevChapters: ChapterInfo[] = []): Promise<ChapterInfo[]> {
     return []
   }
 
-  async getContent(path: string) {
+  async getContent(path: string, prevContent: string = "") {
     return ""
   }
 
-  async install(target: string, option?: InstallOption) {
+  async install(targetFilePath: string, option?: InstallOption) {
     const {
       startChapter, concurrency, endChapter,
     } = {
       ...defaultInstallOption,
       ...option,
     }
-    const tarBase = new Base(target)
+    const tarBase = new Base(targetFilePath)
     const logProgress = log.createProgress()
 
     const chapters = (await this.getChapters(this.menuPage)).map((item, index) => ({
@@ -94,7 +94,7 @@ export class DefaultDriver implements ArticleInstaller {
 
     const finalContent = articles.filter(Boolean).join("\n\n")
     if (!finalContent) {
-      return log.error(`【${target}】 下载失败，内容为空`)
+      return log.error(`【${targetFilePath}】 下载失败，内容为空`)
     }
     const targetFile = tarBase.createAsFile()
     if (startChapter < 1) {
