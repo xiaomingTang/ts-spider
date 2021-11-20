@@ -22,7 +22,7 @@ export function removeSpace(s: string, removeEntityString = true) {
     },
   }
 
-  let result = s.replace(/ /gi, "")
+  let result = s.replace(/[ 	]/gi, "")
 
   Object.values(sp).forEach(({ reg, unicodeReg, entityReg }) => {
     result = result.replace(reg, "")
