@@ -37,6 +37,11 @@ type DownloadHtml = (url: string, encoding: string) => Promise<CheerioRoot>;
 
 interface Config {
   /**
+   * 默认使用 http
+   * @default true
+   */
+  useHttp?: boolean;
+  /**
    * 菜单页(章节列表页) url
    */
   menuUrl: string;
@@ -79,6 +84,10 @@ interface Config {
 }
 
 /**
+ * 常见问题
+ * 1. 乱码可能是编码问题, 手动设置编码(encoding)即可
+ * 2. "下载失败, 内容为空"可能是使用了 https, 设置 useHttp 即可(默认为 true, 即使用 http)
+ *
  * @example
  * ``` typescript
  * new SimpleDriver({
@@ -119,6 +128,7 @@ interface Config {
  * ```
  */
 export class SimpleDriver implements Required<Config> {
+  useHttp: boolean;
   menuUrl: string;
   encoding: string;
 
@@ -135,13 +145,19 @@ export class SimpleDriver implements Required<Config> {
   downloadHtml: DownloadHtml;
 
   constructor(config: Config) {
-    this.menuUrl = (config.menuUrl).trim()
+    this.useHttp = config.useHttp ?? true
+    const menuURL = new URL(config.menuUrl.trim())
+    if (this.useHttp) {
+      menuURL.protocol = "http"
+    }
+    this.menuUrl = menuURL.toString()
     this.encoding = (config.encoding || "utf8").trim()
     this.nextChapterButtonText = (config.nextChapterButtonText || "下一页").trim()
     this.nextContentButtonText = (config.nextContentButtonText || "下一页").trim()
     this.contentPipe = config.contentPipe || ((content: string) => content)
     this.downloadHtml = config.downloadHtml || ((url, encoding) => downloadHtml({
       url,
+      timeout: 15000,
     }, "", encoding))
 
     this.getChapters = config.getChapters instanceof Function ? config.getChapters : ({ html }) => querySelector(html, {
@@ -282,7 +298,7 @@ export class SimpleDriver implements Required<Config> {
     })
 
     // 保留进度条, 防止被其后的 log 覆盖
-    log.log("")
+    log.log("下载完成, 正在保存")
 
     const finalContent = articles.filter(Boolean).join("\n\n")
     if (!finalContent) {
