@@ -83,50 +83,6 @@ interface Config {
   downloadHtml?: DownloadHtml;
 }
 
-/**
- * 常见问题
- * 1. 乱码可能是编码问题, 手动设置编码(encoding)即可
- * 2. "下载失败, 内容为空"可能是使用了 https, 设置 useHttp 即可(默认为 true, 即使用 http)
- *
- * @example
- * ``` typescript
- * new SimpleDriver({
- *   menuUrl: "http://xxx.com/chapters",
- *   getChapters: "#main .chapter",
- *   getContent: "#main .content",
- * }).install("./target.txt")
- * ```
- *
- * @example
- * ``` typescript
- * new SimpleDriver({
- *   menuUrl: "http://xxx.com/chapters",
- *
- *   getChapters: ({ html }) => {
- *     return querySelector(html, {
- *       selector: "#main .chapter",
- *       map: ($) => ({
- *         title: ($.text() || "").trim(),
- *         url: ($.attr("data-url") || "").trim(),
- *       }),
- *     }).filter((item) => !!item.url)
- *   },
- *
- *   getContent: "#main .content",
- *
- *   nextContentPage: ({ url, html }) => {
- *     const wrapUrl = new URL(url)
- *     const { pathname } = wrapUrl
- *     const matches = /article\/(\d+)/g.exec(pathname)
- *     if (matches) {
- *       const nextPageIdx = +matches[1] + 1
- *       return new URL(`/article/${nextPageIdx}.html`, url).toString()
- *     }
- *     return ""
- *   },
- * }).install("./target.txt")
- * ```
- */
 export class SimpleDriver implements Required<Config> {
   useHttp: boolean;
   menuUrl: string;
@@ -144,6 +100,52 @@ export class SimpleDriver implements Required<Config> {
 
   downloadHtml: DownloadHtml;
 
+  /**
+   * 常见问题
+   * 1. 乱码可能是编码问题, 手动设置编码(encoding)即可
+   * 2. "下载失败, 内容为空"可能是使用了 https, 设置 useHttp 即可(默认为 true, 即使用 http)
+   *
+   * @example
+   * ``` typescript
+   * new SimpleDriver({
+   *   menuUrl: "http://xxx.com/chapters",
+   *   getChapters: "#main .chapter",
+   *   getContent: "#main .content",
+   *   encoding: "gbk",
+   *   contentPipe: (content) => removeSpace(content),
+   * }).install("./target.txt")
+   * ```
+   *
+   * @example
+   * ``` typescript
+   * new SimpleDriver({
+   *   menuUrl: "http://xxx.com/chapters",
+   *
+   *   getChapters: ({ html }) => {
+   *     return querySelector(html, {
+   *       selector: "#main .chapter",
+   *       map: ($) => ({
+   *         title: ($.text() || "").trim(),
+   *         url: ($.attr("data-url") || "").trim(),
+   *       }),
+   *     }).filter((item) => !!item.url)
+   *   },
+   *
+   *   getContent: "#main .content",
+   *
+   *   nextContentPage: ({ url, html }) => {
+   *     const wrapUrl = new URL(url)
+   *     const { pathname } = wrapUrl
+   *     const matches = /article\/(\d+)/g.exec(pathname)
+   *     if (matches) {
+   *       const nextPageIdx = +matches[1] + 1
+   *       return new URL(`/article/${nextPageIdx}.html`, url).toString()
+   *     }
+   *     return ""
+   *   },
+   * }).install("./target.txt")
+   * ```
+   */
   constructor(config: Config) {
     this.useHttp = config.useHttp ?? true
     const menuURL = new URL(config.menuUrl.trim())

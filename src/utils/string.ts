@@ -1,3 +1,8 @@
+/**
+ * @param s 
+ * @param removeEntityString default: true
+ * @returns 
+ */
 export function removeSpace(s: string, removeEntityString = true) {
   const sp = {
     nbsp: {
