@@ -6,6 +6,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
+    "server": "cd ./download && python -m http.server",
     "ts": "cross-env ts-node -r tsconfig-paths/register src/index.ts",
     "ts:watch": "cross-env nodemon --watch src/**/*.ts --exec 'ts-node' -r tsconfig-paths/register src/index.ts"
   },
