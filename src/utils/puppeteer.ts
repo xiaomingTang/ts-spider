@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio"
 import * as fs from "fs"
-import {  DirectNavigationOptions, launch, LaunchOptions, Page } from "puppeteer"
+import {  launch, Page, PuppeteerLaunchOptions, WaitForOptions } from "puppeteer"
 import { Base, File, Json } from "tang-base-node-utils"
 
 import { getSuffix } from "./base"
@@ -34,7 +34,7 @@ export const globalPuppeteerConfig: GlobalPuppeteerConfigProps = {
  * browser.close()
  * ```
  */
-export async function launchBrowser(options: LaunchOptions = {}) {
+export async function launchBrowser(options: PuppeteerLaunchOptions = {}) {
   const browser = await launch({
     executablePath: LOCAL_BROWSER_PATH,
     headless: false,
@@ -76,7 +76,9 @@ export async function setBrowser({
   }
 }
 
-export interface PuppeteerFetchConfig extends DirectNavigationOptions {
+export interface PuppeteerFetchConfig extends WaitForOptions {
+  referer?: string;
+  referrerPolicy?: string;
   page?: Page,
   url: string;
 }

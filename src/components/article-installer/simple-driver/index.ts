@@ -255,7 +255,7 @@ export class SimpleDriver implements Required<Config> {
     const total = chapters.length
     const articles = chapters.map(() => "")
 
-    await async.mapLimit(chaptersWithIndex, concurrency, async ({ url, title, index }) => {
+    await async.mapLimit(chaptersWithIndex, concurrency, async ({ url, title, index }: (typeof chaptersWithIndex)[number]) => {
       const pageStr = formatIndexAndTotal({ index: index + 1, total })
 
       if (index < startChapter || index > endChapter) {

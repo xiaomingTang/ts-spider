@@ -4,7 +4,7 @@ export const mimeMap: Record<string, string> = {
   "application/x-freearc": ".arc",
   "video/x-msvideo": ".avi",
   "application/vnd.amazon.ebook": ".azw",
-  "application/octet-stream": ".bin",
+  // "application/octet-stream": ".bin",
   "image/bmp": ".bmp",
   "application/x-bzip": ".bz",
   "application/x-bzip2": ".bz2",
